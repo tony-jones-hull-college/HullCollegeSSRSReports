@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <DataSourceReference>DataSource1</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>c3021f86-3496-47bc-8aba-18f5c423048c</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="StudentList">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Offering">
+            <Value>=Parameters!Offering.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@AcadYear">
+            <Value>=Parameters!AcadYear.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select StudentDetail.RefNo + '|' + o1.Code RefNo, StudentDetail.RefNo + ' ' + o1.Code + '; Offer: ' + isnull(ApplicationOffer.Description, '-') + '; Decision: ' + isnull(ApplicationDecision.Description, '-') + '; College: ' + isnull(CollegeDecision.Description, '-') + ' Date: ' + isnull(convert(varchar(20), ExpectedEnrolmentDate, 103),'') Student
+from Application  
+	inner join StudentDetail on Application.StudentDetailID = StudentDetail.StudentDetailID
+	inner join ApplicationCourse on ApplicationCourse.ApplicationID = Application.ApplicationID
+	inner join Offering o1 on o1.OfferingID = ApplicationCourse.OfferingID
+	left join CollegeDecision on Application.CollegeDecisionID = CollegeDecision.CollegeDecisionID
+	left join ApplicationOffer on Application.OfferID =  ApplicationOffer.ApplicationOfferID
+	left join ApplicationDecision on Application.DecisionID = ApplicationDecision.ApplicationDecisionID
+where o1.Code in (@Offering)
+	and StudentDetail.AcademicYearID = @AcadYear
+union select '' RefNo, '' Student</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="RefNo">
+          <DataField>RefNo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Student">
+          <DataField>Student</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="RepData">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@AcadYear">
+            <Value>=Parameters!AcadYear.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Students">
+            <Value>=Parameters!Students.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Offering">
+            <Value>=Parameters!Offering.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT 1 AS type, RefNo, Code, StudentDetail.AcademicYearID, Surname
+FROM Application
+	INNER JOIN StudentDetail ON Application.StudentDetailID = StudentDetail.StudentDetailID
+	INNER JOIN ApplicationCourse ON ApplicationCourse.ApplicationID = Application.ApplicationID
+	INNER JOIN Offering o1 ON o1.OfferingID = ApplicationCourse.OfferingID
+WHERE (StudentDetail.AcademicYearID = '18/19') AND (StudentDetail.RefNo + '|' + o1.Code IN (@Students))
+UNION
+SELECT 2 AS type, '' RefNo, Code, AcademicYearID, ''
+FROM Offering
+WHERE (AcademicYearID = @AcadYear) AND (Code IN (@Offering)) AND ('' IN (@Students))
+order by surname</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="type">
+          <DataField>type</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="RefNo">
+          <DataField>RefNo</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Code">
+          <DataField>Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="AcademicYearID">
+          <DataField>AcademicYearID</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Surname">
+          <DataField>Surname</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DOC">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@AcadYear">
+            <Value>=Parameters!AcadYear.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select SID, Name from CollegeLevel a
+where isnull(MinAcademicYearID, @AcadYear) &lt;= @AcadYear 
+	and isnull(MaxAcademicYearID, @AcadYear) &gt;= @AcadYear
+	and exists (select 1 from CollegeLevel c where c.ParentSID = a.SID)
+	and LevelNum &gt; 0
+                   and Enabled = 1</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="SID">
+          <DataField>SID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="ADOC">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@AcadYear">
+            <Value>=Parameters!AcadYear.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@DOC">
+            <Value>=Parameters!DOC.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select SID, Name from CollegeLevel 
+where isnull(MinAcademicYearID, @AcadYear) &lt;= @AcadYear 
+and isnull(MaxAcademicYearID, @AcadYear) &gt;= @AcadYear 
+and ParentSID IN (@DOC)</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="SID">
+          <DataField>SID</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="Offerings">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@AcadYear">
+            <Value>=Parameters!AcadYear.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ADOC">
+            <Value>=Parameters!ADOC.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@ProvisionType">
+            <Value>=Parameters!ProvisionType.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>select Code, Name + ' [' + rtrim(Code) + ']' Name
+from (select distinct * from Offering o where exists (select 1 from StudentDetail 
+			inner join Application on application.StudentDetailID = StudentDetail.StudentDetailID 
+			inner join ApplicationCourse on ApplicationCourse.ApplicationID = Application.ApplicationID
+			inner join Offering on ApplicationCourse.OfferingID = Offering.OfferingID
+			where StudentDetail.AcademicYearID = @AcadYear and Offering.OfferingId = o.OfferingID)) Offering
+left join (select distinct isnull (MainOfferingID, SubOfferingID) OfferingId from LinkedOffering) b on b.OfferingId = Offering.OfferingID
+inner join 
+(select OfferingTypeID, IsProgramme from OfferingType 
+where isnull(MinAcademicYearID, @AcadYear) &lt;= @AcadYear 
+	and isnull(MaxAcademicYearID, @AcadYear) &gt;= @AcadYear) a
+on a.OfferingTypeID = Offering.OfferingTypeID
+where AcademicYearID = @AcadYear
+and SID IN (@ADOC)
+and	CASE WHEN @ProvisionType = 1 AND Code like '_F%' AND Offering.OfferingTypeID = 1 THEN 1
+	WHEN @ProvisionType = 1 AND Code like '_F%' AND Offering.OfferingTypeID = 18 AND NOT EXISTS (SELECT 1 FROM LinkedOffering WHERE MainOfferingID = Offering.OfferingId or SubOfferingID = Offering.OfferingID) THEN 1
+	WHEN @ProvisionType = 1 AND Code like '_F%' AND Offering.OfferingTypeID in (28, 29) THEN 1
+	WHEN @ProvisionType = 1 AND Code like '_F%' AND Offering.OfferingTypeID in (15) then 1
+	WHEN @ProvisionType = 1 AND Code like '_F%' AND Offering.OfferingTypeID in (16) THEN 1
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID = 18 AND NOT EXISTS (SELECT 1 FROM LinkedOffering WHERE MainOfferingID = Offering.OfferingId or SubOfferingID = Offering.OfferingID) THEN 1 
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID in (28, 29) THEN 1 
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID in (15) then 1
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID in (19) then 1
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID in (20) then 1
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID = 12 THEN 1
+	WHEN @ProvisionType = 2 AND Code like '_P%' AND Offering.OfferingTypeID in (16) THEN 1
+	ELSE 0 END = 1
+UNION
+select Code, Name + ' [' + rtrim(Code) + ']' Name
+from Offering inner join
+(select OfferingTypeID, IsProgramme from OfferingType 
+where isnull(MinAcademicYearID, @AcadYear) &lt;= @AcadYear 
+	and isnull(MaxAcademicYearID, @AcadYear) &gt;= @AcadYear) a
+on a.OfferingTypeID = Offering.OfferingTypeID
+where StudyYear = 1
+and AcademicYearID = @AcadYear
+and SID IN (@ADOC)
+and @ProvisionType = 3 AND Offering.OfferingTypeID = 7
+UNION
+select Code, Name + ' [' + rtrim(Code) + ']' Name
+from Offering inner join
+(select OfferingTypeID, IsProgramme from OfferingType 
+where isnull(MinAcademicYearID, @AcadYear) &lt;= @AcadYear 
+	and isnull(MaxAcademicYearID, @AcadYear) &gt;= @AcadYear) a
+on a.OfferingTypeID = Offering.OfferingTypeID
+where StudyYear = 1
+and AcademicYearID = @AcadYear
+and SID IN (@ADOC)
+and @ProvisionType = 4 AND Offering.OfferingTypeID = 23
+order by Name
+
+</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Code">
+          <DataField>Code</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Name">
+          <DataField>Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix3">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>20.22329cm</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Subreport Name="LearnerDetailCheckList">
+                          <ReportName>LearnerDetailCheckList</ReportName>
+                          <Parameters>
+                            <Parameter Name="AcadPeriod">
+                              <Value>=Fields!AcademicYearID.Value</Value>
+                            </Parameter>
+                            <Parameter Name="StudentRef">
+                              <Value>=Fields!RefNo.Value</Value>
+                            </Parameter>
+                          </Parameters>
+                          <OmitBorderOnPageBreak>true</OmitBorderOnPageBreak>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Subreport>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.15021cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Rectangle Name="Rectangle1">
+                          <PageBreak>
+                            <BreakLocation>End</BreakLocation>
+                          </PageBreak>
+                          <KeepTogether>true</KeepTogether>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Rectangle>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.6cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Subreport Name="StudyProgramme">
+                          <ReportName>StudyProgramme4</ReportName>
+                          <Parameters>
+                            <Parameter Name="acadYear">
+                              <Value>=Fields!AcademicYearID.Value</Value>
+                            </Parameter>
+                            <Parameter Name="ReportType">
+                              <Value>=Fields!type.Value</Value>
+                            </Parameter>
+                            <Parameter Name="StudentId">
+                              <Value>=Fields!RefNo.Value</Value>
+                            </Parameter>
+                            <Parameter Name="Code2">
+                              <Value>=Fields!Code.Value</Value>
+                            </Parameter>
+                          </Parameters>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Subreport>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.17667cm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Rectangle Name="Rectangle2">
+                          <PageBreak>
+                            <BreakLocation>End</BreakLocation>
+                          </PageBreak>
+                          <KeepTogether>true</KeepTogether>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Rectangle>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="Details" />
+                  <TablixMembers>
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                    <TablixMember />
+                  </TablixMembers>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>RepData</DataSetName>
+            <PageBreak>
+              <BreakLocation>End</BreakLocation>
+            </PageBreak>
+            <Height>1.52688cm</Height>
+            <Width>20.22329cm</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>0.60113in</Height>
+        <Style />
+      </Body>
+      <Width>7.97234in</Width>
+      <Page>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>0cm</LeftMargin>
+        <RightMargin>0cm</RightMargin>
+        <TopMargin>0.5cm</TopMargin>
+        <BottomMargin>0.5cm</BottomMargin>
+        <ColumnSpacing>0.13cm</ColumnSpacing>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="AcadYear">
+      <DataType>String</DataType>
+      <Prompt>Acad Year</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="DOC">
+      <DataType>String</DataType>
+      <Prompt>DOC</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>DOC</DataSetName>
+          <ValueField>SID</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="ADOC">
+      <DataType>String</DataType>
+      <Prompt>ADOC</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>ADOC</DataSetName>
+          <ValueField>SID</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="ProvisionType">
+      <DataType>String</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>1</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Offering Type</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>1</Value>
+            <Label>Full Time</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>2</Value>
+            <Label>Part Time</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+    </ReportParameter>
+    <ReportParameter Name="Offering">
+      <DataType>String</DataType>
+      <Prompt>Offering</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Offerings</DataSetName>
+          <ValueField>Code</ValueField>
+          <LabelField>Name</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+    <ReportParameter Name="Students">
+      <DataType>String</DataType>
+      <AllowBlank>true</AllowBlank>
+      <Prompt>Students</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>StudentList</DataSetName>
+          <ValueField>RefNo</ValueField>
+          <LabelField>Student</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <MultiValue>true</MultiValue>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>2</NumberOfColumns>
+      <NumberOfRows>4</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>AcadYear</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>DOC</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>1</RowIndex>
+          <ParameterName>ADOC</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>ProvisionType</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>2</RowIndex>
+          <ParameterName>Offering</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>3</RowIndex>
+          <ParameterName>Students</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Cm</rd:ReportUnitType>
+  <rd:ReportID>fd9a502a-fd02-4e10-84e5-9f724772f606</rd:ReportID>
+</Report>

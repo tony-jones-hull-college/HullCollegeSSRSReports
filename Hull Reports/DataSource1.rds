@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="DataSource1">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString>Data Source=Advanceddb;Initial Catalog=ProSolution</ConnectString>
+  </ConnectionProperties>
+  <DataSourceID>19c0144c-16b6-40a4-8076-b1abc2a3efa3</DataSourceID>
+</RptDataSource>
